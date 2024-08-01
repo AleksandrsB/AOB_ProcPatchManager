@@ -5,6 +5,15 @@ VisualStudioVersion = 16.0.35026.282
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AOB_ProcPatchManager", "AOB_ProcPatchManager\AOB_ProcPatchManager.vcxproj", "{73E98381-0C2D-493E-867A-D5553DA1DCA5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Submodules", "Submodules", "{DF935795-B0EB-4FC5-9082-7634544299C1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProcMem", "ProcMem\ProcMem\ProcMem.vcxproj", "{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AOB_CalculatorAppPatch", "AOB_CalculatorAppPatch\AOB_CalculatorAppPatch.vcxproj", "{16310603-04D5-4076-8255-861223597997}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB} = {A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,9 +30,28 @@ Global
 		{73E98381-0C2D-493E-867A-D5553DA1DCA5}.Release|x64.Build.0 = Release|x64
 		{73E98381-0C2D-493E-867A-D5553DA1DCA5}.Release|x86.ActiveCfg = Release|Win32
 		{73E98381-0C2D-493E-867A-D5553DA1DCA5}.Release|x86.Build.0 = Release|Win32
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Debug|x64.ActiveCfg = Debug|x64
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Debug|x64.Build.0 = Debug|x64
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Debug|x86.ActiveCfg = Debug|Win32
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Debug|x86.Build.0 = Debug|Win32
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Release|x64.ActiveCfg = Release|x64
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Release|x64.Build.0 = Release|x64
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Release|x86.ActiveCfg = Release|Win32
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB}.Release|x86.Build.0 = Release|Win32
+		{16310603-04D5-4076-8255-861223597997}.Debug|x64.ActiveCfg = Debug|x64
+		{16310603-04D5-4076-8255-861223597997}.Debug|x64.Build.0 = Debug|x64
+		{16310603-04D5-4076-8255-861223597997}.Debug|x86.ActiveCfg = Debug|Win32
+		{16310603-04D5-4076-8255-861223597997}.Debug|x86.Build.0 = Debug|Win32
+		{16310603-04D5-4076-8255-861223597997}.Release|x64.ActiveCfg = Release|x64
+		{16310603-04D5-4076-8255-861223597997}.Release|x64.Build.0 = Release|x64
+		{16310603-04D5-4076-8255-861223597997}.Release|x86.ActiveCfg = Release|Win32
+		{16310603-04D5-4076-8255-861223597997}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A8CB8AE1-B68A-4B5A-8D2A-D5BB1D2DB3EB} = {DF935795-B0EB-4FC5-9082-7634544299C1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D68EF23-E466-4A9D-849E-5A0186929C9F}
