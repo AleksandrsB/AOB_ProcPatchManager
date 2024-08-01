@@ -1,0 +1,3 @@
+[submodule "ProcMem"]
+	path = ProcMem
+	url = https://github.com/AleksandrsB/ProcMem.git
