@@ -72,14 +72,14 @@ bool PatchWithTrampoline::formatNextRelative(std::uintptr_t valueToInsert)
 
 bool PatchWithTrampoline::hasUnassignedRelatives()
 {
-	return asmPatchUtils_findPattern32(patch_NewCodeAddr, 0xDEADBEEF) != -1;
+	return asmPatchUtils_findPattern32(patch_NewCodeAddr, 0xDEADBEEF) <= patch_NewCodeSize;
 }
 
 void PatchWithTrampoline::patch()
 {
 	if (hasUnassignedRelatives())
 	{
-		printf("The patch has unassigned relatives left! Aborting patch().\n");
+		printf("The patch %s has unassigned relatives left! Aborting patch().\n", patchName.c_str());
 		return;
 	}
 	std::cout << "PatchWithTrampoline patch() called" << std::endl;

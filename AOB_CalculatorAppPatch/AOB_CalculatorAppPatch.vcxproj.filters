@@ -4,6 +4,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="main.h" />
+    <MASM Include="asmCalcPatches.asm" />
   </ItemGroup>
 </Project>

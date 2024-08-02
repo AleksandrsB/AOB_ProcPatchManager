@@ -1,8 +1,7 @@
 #pragma once
 #include <memory>
 #include <iostream>
-#include "../ProcMem/ProcMem/ProcMem.h"
-
+#include <ProcMem.h>
 
 
 extern "C" int asmPatchUtils_findPattern32(std::uintptr_t * func, std::uintptr_t pattern);
