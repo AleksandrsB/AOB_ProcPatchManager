@@ -27,7 +27,8 @@ extern "C" void patch_CalcMulAsAdd_second();
 int main()
 {
 	std::shared_ptr<ProcMem>procMem(new ProcMem(L"CalculatorApp.exe"));
-	if (!procMem->getConnectedState())
+	printf("PID: %llx", procMem->getProcessID());
+	if (procMem || !procMem->getConnectedState())
 	{
 		printf("Failed to connect to the process!\n");
 		return 0;
@@ -43,11 +44,11 @@ int main()
 	printf("Successfully found CalcViewModel.dll module!\n");
 	
 	// Code cave [100 bytes]: CalcViewModel.dll + 0x1623E0
-	PatchWithTrampoline pt(L"Calc_MulAsAdd_Set", procMem, CalcViewModel + 0x10EFB5, 11, reinterpret_cast<std::uintptr_t*>(patch_CalcMulAsAdd_first), CalcViewModel + 0x1623E0);
+	PatchWithTrampoline pt("Calc_MulAsAdd_Set", procMem, CalcViewModel + 0x10EFB5, 11, reinterpret_cast<std::uintptr_t*>(patch_CalcMulAsAdd_first), CalcViewModel + 0x1623E0);
 	std::cout << pt.formatNextRelative(CalcViewModel + 0x10EFC0) << std::endl;
 	pt.patch();
 	// Code cave [100 bytes]: CalcViewModel.dll + 0x162420
-	PatchWithTrampoline pt2(L"Calc_MulAsAdd_Change", procMem, CalcViewModel + 0x10EFE0, 7, reinterpret_cast<std::uintptr_t*>(patch_CalcMulAsAdd_second), CalcViewModel + 0x162420);
+	PatchWithTrampoline pt2("Calc_MulAsAdd_Change", procMem, CalcViewModel + 0x10EFE0, 7, reinterpret_cast<std::uintptr_t*>(patch_CalcMulAsAdd_second), CalcViewModel + 0x162420);
 	std::cout << pt2.formatNextRelative(CalcViewModel + 0x10EFE7) << std::endl;
 	pt2.patch();
 

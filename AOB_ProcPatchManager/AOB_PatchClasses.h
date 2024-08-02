@@ -10,19 +10,19 @@ extern "C" int asmPatchUtils_formatNextRelative(std::uintptr_t * funcToInject, s
 class PatchClass
 {
 protected:
-	std::shared_ptr<ProcMem>		tProcess_Mem;
-	std::uintptr_t					tProcess_OrigCodeAddr;
-	size_t							tProcess_OrigCodeSize;
-	std::vector<uint8_t>			patch_OrigCodeRawCopy;
-	std::uintptr_t* patch_NewCodeAddr;
-	size_t							patch_NewCodeSize;
+	std::shared_ptr<ProcMem>	m_tProcess_Mem;
+	std::uintptr_t				m_tProcess_OrigCodeAddr;
+	size_t						m_tProcess_OrigCodeSize;
+	std::vector<uint8_t>		m_patch_OrigCodeRawCopy;
+	std::uintptr_t*				m_patch_NewCodeAddr;
+	size_t						m_patch_NewCodeSize;
 
 public:
-	std::wstring					patchName;
-	bool							isActive;
+	std::string					patchName;
+	bool						isActive;
 public:
 	PatchClass(
-		const std::wstring& pName,
+		const std::string& pName,
 		std::shared_ptr<ProcMem> tProc_Mem,
 		std::uintptr_t tProc_origCodeAddr,
 		size_t tProc_origCodeSize,
@@ -38,7 +38,7 @@ class PatchBasic : public PatchClass
 {
 public:
 	PatchBasic(
-		const std::wstring& pName,
+		const std::string& pName,
 		std::shared_ptr<ProcMem> tProc_Mem,
 		std::uintptr_t tProc_origCodeAddr,
 		size_t tProc_origCodeSize,
@@ -55,7 +55,7 @@ public:
 	std::vector<uint8_t> tProcess_patchTrampolineCode;
 public:
 	PatchWithTrampoline(
-		const std::wstring& pName,
+		const std::string& pName,
 		std::shared_ptr<ProcMem> tProc_Mem,
 		std::uintptr_t tProc_origCodeAddr,
 		size_t tProc_origCodeSize,
