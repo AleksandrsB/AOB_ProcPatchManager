@@ -79,10 +79,10 @@ void PatchWithTrampoline::patch()
 {
 	if (hasUnassignedRelatives())
 	{
-		printf("The patch %s has unassigned relatives left! Aborting patch().\n", patchName.c_str());
+		printf("The patch %s has unassigned relatives left! Aborting patch().\n", patchName);
 		return;
 	}
-	std::cout << patchName.c_str() << "PatchWithTrampoline.patch() called" << std::endl;
+	std::cout << patchName << ": PatchWithTrampoline.patch() called" << std::endl;
 	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(tProcess_CodeCaveAddr, reinterpret_cast<std::uint8_t*>(m_patch_NewCodeAddr), m_patch_NewCodeSize); // insert patch to code cave
 	printf("Assigned code cave addr: 0x%llx\n", tProcess_CodeCaveAddr);
 
@@ -93,7 +93,7 @@ void PatchWithTrampoline::patch()
 
 void PatchWithTrampoline::unpatch()
 {
-	std::cout << "PatchWithTrampoline unpatch() called" << std::endl;
+	std::cout << patchName << ": PatchWithTrampoline unpatch() called" << std::endl;
 	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(m_tProcess_OrigCodeAddr, m_patch_OrigCodeRawCopy.data(), m_tProcess_OrigCodeSize); // orig code
 
 	std::vector<std::uint8_t> cleanup(m_patch_NewCodeSize, 0);
