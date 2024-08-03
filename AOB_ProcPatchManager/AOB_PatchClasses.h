@@ -16,10 +16,10 @@ protected:
 	std::vector<uint8_t>		m_patch_OrigCodeRawCopy;
 	std::uintptr_t*				m_patch_NewCodeAddr;
 	size_t						m_patch_NewCodeSize;
-
+	bool						isActive;
 public:
 	std::string					patchName;
-	bool						isActive;
+	
 public:
 	PatchClass(
 		const std::string& pName,

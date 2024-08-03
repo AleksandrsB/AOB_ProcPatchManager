@@ -5,8 +5,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AOB_PatchClasses.h" />
+    <ClInclude Include="AOB_PatchManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AOB_PatchClasses.cpp" />
+    <ClCompile Include="AOB_PatchManager.cpp" />
   </ItemGroup>
 </Project>
