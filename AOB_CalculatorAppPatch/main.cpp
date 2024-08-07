@@ -1,5 +1,8 @@
 #include <iostream>
 #include <AOB_PatchManager.h>
+
+#define LOG(x) std::cout<< x << std::endl;
+
 /*
 First time pressing OP:
 
@@ -19,15 +22,19 @@ CalcViewModel.dll+10EFE0:
 7FFC8D54EFE4 - 44 38 3E  - cmp [rsi],r15b
 7FFC8D54EFE7 - 74 50 - je CalcViewModel.dll+10F039
 */
-#define TEST
 
 extern "C" void patch_CalcMulAsAdd_first();
 extern "C" void patch_CalcMulAsAdd_second();
 
 int main()
 {
-#ifdef TEST
 	AOB_PatchManager pm(L"CalculatorApp.exe");
+	if (pm.lastError != eLastError::OK)
+	{
+		LOG("An error occured while creating AOB_PatchManager class!");
+		return;
+	}
+
 	pm.createNewPatch<PatchWithTrampoline>("Calc_MulAsAdd_Set")
 		.setCodeCaveInfo({ L"CalcViewModel.dll", 0x1623E0 })
 		.setOrigCodeInfo({ L"CalcViewModel.dll", 0x10EFB5 }, 11)
@@ -43,44 +50,10 @@ int main()
 	pm.applyPatch("Calc_MulAsAdd_Set");
 	pm.applyPatch("Calc_MulAsAss_Chg");
 	
-
-	//printf("%llx\n", &pt);
 	system("pause");
 
 	pm.revertPatch("Calc_MulAsAdd_Set");
 	pm.revertPatch("Calc_MulAsAss_Chg");
 
-#else
-
-	std::shared_ptr<ProcMem>procMem(new ProcMem(L"CalculatorApp.exe"));
-	printf("PID: %x\n", procMem->getProcessID());
-	if (!procMem || !procMem->getConnectedState())
-	{
-		printf("Failed to connect to the process!\n");
-		return 0;
-	}
-	printf("Successfully connected to the process!\n");
-	system("pause");
-	std::uintptr_t CalcViewModel = procMem->getModuleBaseAddress(L"CalcViewModel.dll");
-	if (CalcViewModel == 0)
-	{
-		printf("Failed to find CalcViewModel.dll module!\n");
-		return 0;
-	}
-	printf("Successfully found CalcViewModel.dll module!\n");
-
-	// Code cave [100 bytes]: CalcViewModel.dll + 0x1623E0
-	PatchWithTrampoline pt("Calc_MulAsAdd_Set", procMem, CalcViewModel + 0x10EFB5, 11, reinterpret_cast<std::uintptr_t*>(patch_CalcMulAsAdd_first), CalcViewModel + 0x1623E0);
-	pt.formatNextRelative(CalcViewModel + 0x10EFC0);
-	pt.patch();
-	// Code cave [100 bytes]: CalcViewModel.dll + 0x162420
-	PatchWithTrampoline pt2("Calc_MulAsAdd_Change", procMem, CalcViewModel + 0x10EFE0, 7, reinterpret_cast<std::uintptr_t*>(patch_CalcMulAsAdd_second), CalcViewModel + 0x162420);
-	pt2.formatNextRelative(CalcViewModel + 0x10EFE7);
-	pt2.patch();
-
-	system("pause");
-	pt.unpatch();
-	pt2.unpatch();
-#endif // TEST
 	return 0;
 }
