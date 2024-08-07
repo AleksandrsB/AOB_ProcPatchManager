@@ -4,31 +4,35 @@
 #include <ProcMem.h>
 
 
-extern "C" int asmPatchUtils_findPattern32(std::uintptr_t * func, std::uintptr_t pattern);
-extern "C" int asmPatchUtils_formatNextRelative(std::uintptr_t * funcToInject, std::uintptr_t funcInjectionAddr, std::uintptr_t valueToCalc);
+extern "C" int asmPatchUtils_findPattern32(std::uint8_t * func, std::uintptr_t pattern);
+extern "C" int asmPatchUtils_formatNextRelative(std::uint8_t * funcToInject, std::uintptr_t funcInjectionAddr, std::uintptr_t valueToCalc);
+
+struct ModuleOffset
+{
+	std::wstring moduleName;
+	std::uintptr_t moduleOffset;
+};
 
 class PatchClass
 {
 protected:
-	std::shared_ptr<ProcMem>	m_tProcess_Mem;
-	std::uintptr_t				m_tProcess_OrigCodeAddr;
-	size_t						m_tProcess_OrigCodeSize;
-	std::vector<uint8_t>		m_patch_OrigCodeRawCopy;
-	std::uintptr_t*				m_patch_NewCodeAddr;
-	size_t						m_patch_NewCodeSize;
+	std::shared_ptr<ProcMem>	remote_procMem;
+	std::uintptr_t				remote_origCodeAddr;
+	std::size_t					remote_origCodeSize;
+	std::vector<std::uint8_t>	local_origCodeRawCopy;
+	std::uint8_t*				local_newCodeAddr;
+	std::size_t					local_newCodeSize;
+
 	bool						isActive;
 public:
 	std::string					patchName;
-	
-public:
-	PatchClass(
-		const std::string& pName,
-		std::shared_ptr<ProcMem> tProc_Mem,
-		std::uintptr_t tProc_origCodeAddr,
-		size_t tProc_origCodeSize,
-		std::uintptr_t* patch_newCodeAOBAddr);
 
+public:
+	PatchClass(const std::string& pName, std::shared_ptr<ProcMem> pMem);
 	virtual ~PatchClass() = default;
+
+	virtual PatchClass& setOrigCodeInfo(const ModuleOffset& remote_addr, size_t remote_size);
+	virtual PatchClass& setNewCodeInfo(std::uint8_t* local_newCodeAddr);
 
 	virtual void patch() = 0;
 	virtual void unpatch() = 0;
@@ -37,12 +41,7 @@ public:
 class PatchBasic : public PatchClass
 {
 public:
-	PatchBasic(
-		const std::string& pName,
-		std::shared_ptr<ProcMem> tProc_Mem,
-		std::uintptr_t tProc_origCodeAddr,
-		size_t tProc_origCodeSize,
-		std::uintptr_t* patch_newCodeAOBAddr);
+	PatchBasic(const std::string& pName, std::shared_ptr<ProcMem> pMem) : PatchClass(pName, pMem) {}
 
 	void patch() override;
 	void unpatch() override;
@@ -51,18 +50,17 @@ public:
 class PatchWithTrampoline : public PatchClass
 {
 public:
-	std::uintptr_t tProcess_CodeCaveAddr;
-	std::vector<uint8_t> tProcess_patchTrampolineCode;
+	std::uintptr_t remote_CodeCaveAddr = 0;
+	std::vector<uint8_t> remote_patchTrampolineCode;
 public:
-	PatchWithTrampoline(
-		const std::string& pName,
-		std::shared_ptr<ProcMem> tProc_Mem,
-		std::uintptr_t tProc_origCodeAddr,
-		size_t tProc_origCodeSize,
-		std::uintptr_t* patch_newCodeAOBAddr,
-		std::uintptr_t tProc_CodeCaveAddr);
+	PatchWithTrampoline(const std::string& pName, std::shared_ptr<ProcMem> pMem) : PatchClass(pName, pMem) {}
 
-	bool formatNextRelative(std::uintptr_t valueToInsert);
+	PatchWithTrampoline& setOrigCodeInfo(const ModuleOffset& remote_addr, size_t remote_size) override;
+	PatchWithTrampoline& setNewCodeInfo(std::uint8_t* local_newCodeAddr) override;
+	PatchWithTrampoline& setCodeCaveInfo(const ModuleOffset& remote_addr);
+	
+
+	PatchWithTrampoline& formatNextRelative(const ModuleOffset& remote_addrToInsert);
 	bool hasUnassignedRelatives();
 
 	void patch() override;

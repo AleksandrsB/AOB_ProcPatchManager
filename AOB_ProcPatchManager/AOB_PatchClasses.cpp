@@ -1,78 +1,101 @@
 #include "AOB_PatchClasses.h"
 
-PatchClass::PatchClass(
-	const std::string& pName,
-	std::shared_ptr<ProcMem> tProc_Mem,
-	std::uintptr_t tProc_origCodeAddr,
-	size_t tProc_origCodeSize,
-	std::uintptr_t* patch_newCodeAOBAddr)
-	:
-	patchName(pName),
-	m_tProcess_Mem(tProc_Mem),
-	m_tProcess_OrigCodeAddr(tProc_origCodeAddr),
-	m_tProcess_OrigCodeSize(tProc_origCodeSize),
-	m_patch_NewCodeAddr(patch_newCodeAOBAddr),
-	isActive(false)
+PatchClass::PatchClass(const std::string& pName, std::shared_ptr<ProcMem> pMem)
 {
-	m_patch_OrigCodeRawCopy = tProc_Mem->readMemoryArray<std::uint8_t>(tProc_origCodeAddr, m_tProcess_OrigCodeSize);
-	m_patch_NewCodeSize = asmPatchUtils_findPattern32(m_patch_NewCodeAddr, 0xDEADC0DE); // 0xDEADC0DE = end of func pattern
+	patchName = pName;
+	remote_procMem = pMem;
+	isActive = false;
 }
 
-PatchBasic::PatchBasic(
-	const std::string& pName,
-	std::shared_ptr<ProcMem> tProc_Mem,
-	std::uintptr_t tProc_origCodeAddr,
-	size_t tProc_origCodeSize,
-	std::uintptr_t* patch_newCodeAOBAddr)
-	:
-	PatchClass(pName, tProc_Mem, tProc_origCodeAddr, tProc_origCodeSize, patch_newCodeAOBAddr) {}
+PatchClass& PatchClass::setOrigCodeInfo(const ModuleOffset& remote_addr, size_t remote_size)
+{
+	// get absolute remote proc address from (moduleName + offset)
+	remote_origCodeAddr = remote_procMem->getModuleBaseAddress(remote_addr.moduleName) + remote_addr.moduleOffset;
+	local_newCodeSize = remote_size;
+	// copy original code from remote proc to local
+	local_origCodeRawCopy = remote_procMem->readMemoryArray<std::uint8_t>(remote_origCodeAddr, remote_size);
+	return *this;
+}
+
+PatchClass& PatchClass::setNewCodeInfo(std::uint8_t* newCodeAddr)
+{
+	local_newCodeAddr = newCodeAddr;
+	local_newCodeSize = asmPatchUtils_findPattern32(local_newCodeAddr, 0xDEADC0DE);
+	return *this;
+}
 
 void PatchBasic::patch()
 {
 	std::cout << patchName.c_str() << ": PatchBasic patch() called" << std::endl;
-	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(m_tProcess_OrigCodeAddr, reinterpret_cast<std::uint8_t*>(m_patch_NewCodeAddr), m_patch_NewCodeSize);
+	remote_procMem->
+		writeMemoryArray<std::uint8_t>(
+			remote_origCodeAddr,
+			local_newCodeAddr,
+			local_newCodeSize
+			);
+
 	isActive = true;
 }
 
 void PatchBasic::unpatch()
 {
 	std::cout << patchName.c_str() << ": PatchBasic unpatch() called" << std::endl;
-	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(m_tProcess_OrigCodeAddr, m_patch_OrigCodeRawCopy.data(), m_tProcess_OrigCodeSize);
+	remote_procMem->
+		writeMemoryArray<std::uint8_t>(
+			remote_origCodeAddr,
+			local_origCodeRawCopy.data(),
+			remote_origCodeSize
+			);
+
 	isActive = false;
 }
 
-PatchWithTrampoline::PatchWithTrampoline(
-	const std::string& pName,
-	std::shared_ptr<ProcMem> tProc_Mem,
-	std::uintptr_t tProc_origCodeAddr,
-	size_t tProc_origCodeSize,
-	std::uintptr_t* patch_newCodeAOBAddr,
-	std::uintptr_t tProc_CodeCaveAddr)
-	:
-	PatchClass(pName, tProc_Mem, tProc_origCodeAddr, tProc_origCodeSize, patch_newCodeAOBAddr), tProcess_CodeCaveAddr(tProc_CodeCaveAddr)
+PatchWithTrampoline& PatchWithTrampoline::setOrigCodeInfo(const ModuleOffset& remote_addr, size_t remote_size)
 {
-	if (tProc_origCodeSize < 5)
+
+	// remote_origCodeAddr = calc absolute address
+	PatchClass::setOrigCodeInfo(remote_addr, remote_size);
+
+	if (remote_size < 5)
 	{
-		printf("%s: tPatch_origCodeSize is less then 5! Aborting.", pName.c_str());
-		return;
+		printf("%s: remote_origCodeSize is less then 5! Aborting.\n", patchName);
+		return *this;
 	}
-	tProcess_patchTrampolineCode.resize(tProc_origCodeSize);
-	tProcess_patchTrampolineCode.assign(m_tProcess_OrigCodeSize, 0x90);
-	std::uint32_t jumpDist = tProcess_CodeCaveAddr - m_tProcess_OrigCodeAddr - 5;
-	tProcess_patchTrampolineCode[0] = 0xE9;
-	std::memcpy(&tProcess_patchTrampolineCode[1], &jumpDist, 4);
+
+	// build jumpToCodeCave jmp instruction: (5 bytes) + NOPs to cover remote original instruction
+	remote_patchTrampolineCode.assign(remote_size, 0x90);
+	remote_patchTrampolineCode[0] = 0xE9;
+
+	std::uint32_t jumpDist = remote_CodeCaveAddr - remote_origCodeAddr - 5;
+	std::memcpy(&remote_patchTrampolineCode[1], &jumpDist, 4);
+	return *this;
 }
 
-bool PatchWithTrampoline::formatNextRelative(std::uintptr_t valueToInsert)
+PatchWithTrampoline& PatchWithTrampoline::setNewCodeInfo(std::uint8_t* local_newCodeAddr)
 {
-	int result = asmPatchUtils_formatNextRelative(m_patch_NewCodeAddr, tProcess_CodeCaveAddr, valueToInsert);
+	PatchClass::setNewCodeInfo(local_newCodeAddr);
+	return *this;
+}
+
+PatchWithTrampoline& PatchWithTrampoline::setCodeCaveInfo(const ModuleOffset& remote_addr)
+{
+	remote_CodeCaveAddr = remote_procMem->getModuleBaseAddress(remote_addr.moduleName) + remote_addr.moduleOffset;
+	return *this;
+}
+
+PatchWithTrampoline& PatchWithTrampoline::formatNextRelative(const ModuleOffset& remote_addrToInsert)
+{
+
+	std::uintptr_t valueToInsert = remote_procMem->getModuleBaseAddress(remote_addrToInsert.moduleName) + remote_addrToInsert.moduleOffset;
+
+	int result = asmPatchUtils_formatNextRelative(local_newCodeAddr, remote_CodeCaveAddr, valueToInsert);
 	printf("formatNextRelative func with param: %llx, result: %d\n", valueToInsert, result);
-	return result == 1;
+	return *this;
 }
 
 bool PatchWithTrampoline::hasUnassignedRelatives()
 {
-	return asmPatchUtils_findPattern32(m_patch_NewCodeAddr, 0xDEADBEEF) <= m_patch_NewCodeSize;
+	return asmPatchUtils_findPattern32(local_newCodeAddr, 0xDEADBEEF) <= local_newCodeSize;
 }
 
 void PatchWithTrampoline::patch()
@@ -83,20 +106,43 @@ void PatchWithTrampoline::patch()
 		return;
 	}
 	std::cout << patchName << ": PatchWithTrampoline.patch() called" << std::endl;
-	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(tProcess_CodeCaveAddr, reinterpret_cast<std::uint8_t*>(m_patch_NewCodeAddr), m_patch_NewCodeSize); // insert patch to code cave
-	printf("Assigned code cave addr: 0x%llx\n", tProcess_CodeCaveAddr);
 
-	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(m_tProcess_OrigCodeAddr, tProcess_patchTrampolineCode.data(), m_tProcess_OrigCodeSize); // patch orig code with trampoline
+	// insert patch to code cave
+	remote_procMem->
+		writeMemoryArray<std::uint8_t>(
+			remote_CodeCaveAddr,
+			local_newCodeAddr,
+			local_newCodeSize);
+
+	std::cout << patchName << ": Assigned code cave addr: " << std::hex << remote_CodeCaveAddr << std::endl;
+
+	// patch orig code with trampoline to code cave
+	remote_procMem->
+		writeMemoryArray<std::uint8_t>(
+			remote_origCodeAddr,
+			remote_patchTrampolineCode.data(),
+			remote_patchTrampolineCode.size());
 
 	isActive = true;
 }
 
 void PatchWithTrampoline::unpatch()
 {
+	// orig code
 	std::cout << patchName << ": PatchWithTrampoline unpatch() called" << std::endl;
-	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(m_tProcess_OrigCodeAddr, m_patch_OrigCodeRawCopy.data(), m_tProcess_OrigCodeSize); // orig code
+	remote_procMem->
+		writeMemoryArray<std::uint8_t>(
+			remote_origCodeAddr,
+			local_origCodeRawCopy.data(),
+			local_origCodeRawCopy.size());
 
-	std::vector<std::uint8_t> cleanup(m_patch_NewCodeSize, 0);
-	m_tProcess_Mem->writeMemoryArray<std::uint8_t>(tProcess_CodeCaveAddr, cleanup.data(), m_patch_NewCodeSize); // clear code cave
+	// clear code cave
+	std::vector<std::uint8_t> cleanup(local_newCodeSize, 0);
+	remote_procMem->
+		writeMemoryArray<std::uint8_t>(
+			remote_CodeCaveAddr,
+			cleanup.data(),
+			local_newCodeSize);
+
 	isActive = false;
 }
