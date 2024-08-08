@@ -85,7 +85,6 @@ PatchWithTrampoline& PatchWithTrampoline::setCodeCaveInfo(const ModuleOffset& re
 
 PatchWithTrampoline& PatchWithTrampoline::formatNextRelative(const ModuleOffset& remote_addrToInsert)
 {
-
 	std::uintptr_t valueToInsert = remote_procMem->getModuleBaseAddress(remote_addrToInsert.moduleName) + remote_addrToInsert.moduleOffset;
 
 	int result = asmPatchUtils_formatNextRelative(local_newCodeAddr, remote_CodeCaveAddr, valueToInsert);

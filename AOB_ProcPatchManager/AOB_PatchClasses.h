@@ -7,12 +7,6 @@
 extern "C" int asmPatchUtils_findPattern32(std::uint8_t * func, std::uintptr_t pattern);
 extern "C" int asmPatchUtils_formatNextRelative(std::uint8_t * funcToInject, std::uintptr_t funcInjectionAddr, std::uintptr_t valueToCalc);
 
-struct ModuleOffset
-{
-	std::wstring moduleName;
-	std::uintptr_t moduleOffset;
-};
-
 class PatchClass
 {
 protected:

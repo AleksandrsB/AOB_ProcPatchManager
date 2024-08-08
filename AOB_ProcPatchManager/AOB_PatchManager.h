@@ -1,6 +1,14 @@
 #pragma once
 #include "AOB_PatchClasses.h"
 #include <unordered_map>
+/*
+* TODO:
+* 1) Chain functions while building patch - make them independent or not?
+* 2) Remove all console lines
+* 3) Make eLastError more usable
+* 
+*/
+#define not nameConstructor
 
 enum class eLastError
 {
@@ -19,6 +27,7 @@ public:
 	eLastError lastError;
 public:
 
+#ifdef nameConstructor
 	AOB_PatchManager(const std::wstring& procExeName)
 	{
 		m_targetProcess = std::make_shared<ProcMem>(procExeName);
@@ -29,6 +38,18 @@ public:
 		}
 		lastError = eLastError::OK;
 	}
+#else
+	AOB_PatchManager(std::shared_ptr<ProcMem> procMem)
+	{
+		m_targetProcess = procMem;
+		if (!m_targetProcess || !m_targetProcess->getConnectedState())
+		{
+			lastError = eLastError::TARGET_PROC_NOT_FOUND;
+			return;
+		}
+		lastError = eLastError::OK;
+	}
+#endif // nameConstructor
 	virtual ~AOB_PatchManager() = default;
 
 	template<typename T>
@@ -49,7 +70,6 @@ public:
 		m_patches.emplace(patchName, std::move(patch));
 		return ref;
 	}
-
 
 	void applyPatch(const std::string& patchName)
 	{
