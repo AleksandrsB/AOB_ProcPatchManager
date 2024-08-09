@@ -11,7 +11,8 @@ PatchClass& PatchClass::setOrigCodeInfo(const ModuleOffset& remote_addr, size_t 
 {
 	// get absolute remote proc address from (moduleName + offset)
 	remote_origCodeAddr = remote_procMem->getModuleBaseAddress(remote_addr.moduleName) + remote_addr.moduleOffset;
-	local_newCodeSize = remote_size;
+	remote_origCodeSize = remote_size;
+
 	// copy original code from remote proc to local
 	local_origCodeRawCopy = remote_procMem->readMemoryArray<std::uint8_t>(remote_origCodeAddr, remote_size);
 	return *this;
