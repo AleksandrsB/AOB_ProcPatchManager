@@ -27,7 +27,6 @@ PatchClass& PatchClass::setNewCodeInfo(std::uint8_t* newCodeAddr)
 
 void PatchBasic::patch()
 {
-	std::cout << patchName.c_str() << ": PatchBasic patch() called" << std::endl;
 	remote_procMem->
 		writeMemoryArray<std::uint8_t>(
 			remote_origCodeAddr,
@@ -40,7 +39,6 @@ void PatchBasic::patch()
 
 void PatchBasic::unpatch()
 {
-	std::cout << patchName.c_str() << ": PatchBasic unpatch() called" << std::endl;
 	remote_procMem->
 		writeMemoryArray<std::uint8_t>(
 			remote_origCodeAddr,
@@ -59,8 +57,7 @@ PatchWithTrampoline& PatchWithTrampoline::setOrigCodeInfo(const ModuleOffset& re
 
 	if (remote_size < 5)
 	{
-		printf("%s: remote_origCodeSize is less then 5! Aborting.\n", patchName);
-		return *this;
+		throw std::runtime_error(std::string("Failed: The patch") + patchName + std::string(" has origCodeSize less then 5!"));
 	}
 
 	// build jumpToCodeCave jmp instruction: (5 bytes) + NOPs to cover remote original instruction
@@ -89,7 +86,8 @@ PatchWithTrampoline& PatchWithTrampoline::formatNextRelative(const ModuleOffset&
 	std::uintptr_t valueToInsert = remote_procMem->getModuleBaseAddress(remote_addrToInsert.moduleName) + remote_addrToInsert.moduleOffset;
 
 	int result = asmPatchUtils_formatNextRelative(local_newCodeAddr, remote_CodeCaveAddr, valueToInsert);
-	printf("formatNextRelative func with param: %llx, result: %d\n", valueToInsert, result);
+	if(result==-1)
+		throw std::runtime_error(std::string("Failed: The patch") + patchName + std::string(".formatNextRelative returned -1!"));
 	return *this;
 }
 
@@ -102,11 +100,12 @@ void PatchWithTrampoline::patch()
 {
 	if (hasUnassignedRelatives())
 	{
-		printf("The patch %s has unassigned relatives left! Aborting patch().\n", patchName);
-		return;
+		throw std::runtime_error(std::string("Failed: The patch") + patchName+ std::string(" has unassigned relatives left!"));
 	}
-	std::cout << patchName << ": PatchWithTrampoline.patch() called" << std::endl;
-
+	if (!remote_CodeCaveAddr || !local_newCodeAddr || !local_newCodeSize)
+	{
+		throw std::runtime_error(std::string("Failed: The patch") + patchName + std::string(" has unassigned data!"));
+	}
 	// insert patch to code cave
 	remote_procMem->
 		writeMemoryArray<std::uint8_t>(
@@ -114,7 +113,6 @@ void PatchWithTrampoline::patch()
 			local_newCodeAddr,
 			local_newCodeSize);
 
-	std::cout << patchName << ": Assigned code cave addr: " << std::hex << remote_CodeCaveAddr << std::endl;
 
 	// patch orig code with trampoline to code cave
 	remote_procMem->
@@ -129,7 +127,6 @@ void PatchWithTrampoline::patch()
 void PatchWithTrampoline::unpatch()
 {
 	// orig code
-	std::cout << patchName << ": PatchWithTrampoline unpatch() called" << std::endl;
 	remote_procMem->
 		writeMemoryArray<std::uint8_t>(
 			remote_origCodeAddr,

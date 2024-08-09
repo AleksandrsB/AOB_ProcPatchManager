@@ -10,6 +10,9 @@ overflowCheckUP dq 0FFFFFFFF80000000h
 ; EDX = pattern
 
 asmPatchUtils_findPattern32 proc 
+	;========[ push all afflicted registers ]
+	push r9
+	;========[ main code ]
 	mov rax, -1
 loopStart:
 	cmp rax, maxFuncSize
@@ -20,8 +23,12 @@ loopStart:
 	sub r9d, edx
 	jnz loopStart
 endfunc:
+	;========[ pop all afflicted registers ]
+	pop r9
 	ret ; rax = size
 limitReached:
+	;========[ pop all afflicted registers ]
+	pop r9
 	mov rax, -1
 	ret
 asmPatchUtils_findPattern32 endp
@@ -32,6 +39,9 @@ asmPatchUtils_findPattern32 endp
 ; R8 = valueToCalc
 
 asmPatchUtils_formatNextRelative PROC 
+	;========[ push all afflicted registers ]
+	push rbx
+	;========[ main code ]
 	push rdx
 	xor rdx, rdx
 	mov rdx, 0DEADC0DEh
@@ -67,11 +77,15 @@ asmPatchUtils_formatNextRelative PROC
 	lea rax, [rcx + rbx]
 	mov [rax], r8d	; patch instruction with new calculated relative value
 	mov rax, 1		; return success
+	;========[ pop all afflicted registers ]
+	pop rbx
 	ret
 
 out_of_range:
 	pop rax
 	mov rax, -1
+	;========[ pop all afflicted registers ]
+	pop rbx
 	ret
 
 asmPatchUtils_formatNextRelative ENDP

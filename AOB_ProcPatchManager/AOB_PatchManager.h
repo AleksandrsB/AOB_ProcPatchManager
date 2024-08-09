@@ -1,6 +1,5 @@
 #pragma once
 #include "AOB_PatchClasses.h"
-#include <unordered_map>
 /*
 * TODO:
 * 1) Chain functions while building patch - make them independent or not?
@@ -21,7 +20,7 @@ class AOB_PatchManager
 {
 private:
 	std::shared_ptr<ProcMem> m_targetProcess;
-	std::unordered_map<std::string, std::unique_ptr<PatchClass>> m_patches;
+	std::vector<std::unique_ptr<PatchClass>> m_patches;
 
 public:
 	eLastError lastError;
@@ -58,33 +57,56 @@ public:
 		static_assert(std::is_base_of<PatchClass, T>::value, "T must be derived from PatchClass");
 
 		// check already existed name
-		auto it = m_patches.find(patchName);
-		if (it != m_patches.end())
+		auto patchCheck = findPatchByName(patchName);
+		if (patchCheck)
 		{
-			return dynamic_cast<T&>(*it->second); // return reference for next chain functions
+			return (T&)(*patchCheck); // return reference for next chain functions
 		}
 
 		// create new patch and return reference for next chain functions
 		std::unique_ptr<T> patch = std::make_unique<T>(patchName, m_targetProcess);
 		T& ref = *patch;
-		m_patches.emplace(patchName, std::move(patch));
+		m_patches.push_back(std::move(patch));
 		return ref;
+	}
+
+	// Your method to find the patch by name
+	PatchClass* findPatchByName(const std::string& name) 
+	{
+		auto it = std::find_if(
+			m_patches.begin(),
+			m_patches.end(),
+			[&name](const std::unique_ptr<PatchClass>& patch) 
+			{
+				return patch->patchName == name;
+			});
+
+		if (it != m_patches.end())
+		{
+			return it->get();
+		}
+
+		return nullptr; // Return nullptr if not found
 	}
 
 	void applyPatch(const std::string& patchName)
 	{
-		if (m_patches.find(patchName) != m_patches.end())
+		PatchClass* patch = findPatchByName(patchName);
+		if (patch) 
 		{
-			m_patches[patchName]->patch();
+			patch->patch();
 		}
+		else throw std::runtime_error("Patch Not Found!");
 	}
 
 	void revertPatch(const std::string& patchName)
 	{
-		if (m_patches.find(patchName) != m_patches.end())
+		PatchClass* patch = findPatchByName(patchName);
+		if (patch)
 		{
-			m_patches[patchName]->unpatch();
+			patch->unpatch();
 		}
+		else throw std::runtime_error("Patch Not Found!");
 	}
 };
 
