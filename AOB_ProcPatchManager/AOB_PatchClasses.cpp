@@ -91,6 +91,16 @@ PatchWithTrampoline& PatchWithTrampoline::formatNextRelative(const ModuleOffset&
 	return *this;
 }
 
+PatchWithTrampoline& PatchWithTrampoline::formatNextAbsolute(const ModuleOffset& remote_addrToInsert)
+{
+	std::uintptr_t valueToInsert = remote_procMem->getModuleBaseAddress(remote_addrToInsert.moduleName) + remote_addrToInsert.moduleOffset;
+
+	int result = asmPatchUtils_formatNextAbsolute(local_newCodeAddr, remote_CodeCaveAddr, valueToInsert);
+	if (result == -1)
+		throw std::runtime_error(std::string("Failed: The patch") + patchName + std::string(".formatNextAbsolute returned -1!"));
+	return *this;
+}
+
 bool PatchWithTrampoline::hasUnassignedRelatives()
 {
 	return asmPatchUtils_findPattern32(local_newCodeAddr, 0xDEADBEEF) <= local_newCodeSize;
@@ -120,6 +130,26 @@ void PatchWithTrampoline::patch()
 			remote_origCodeAddr,
 			remote_patchTrampolineCode.data(),
 			remote_patchTrampolineCode.size());
+
+	isActive = true;
+}
+
+void PatchWithTrampoline::testPatch()
+{
+	if (hasUnassignedRelatives())
+	{
+		throw std::runtime_error(std::string("Failed: The patch") + patchName + std::string(" has unassigned relatives left!"));
+	}
+	if (!remote_CodeCaveAddr || !local_newCodeAddr || !local_newCodeSize)
+	{
+		throw std::runtime_error(std::string("Failed: The patch") + patchName + std::string(" has unassigned data!"));
+	}
+	// insert patch to code cave
+	remote_procMem->
+		writeMemoryArray<std::uint8_t>(
+			remote_CodeCaveAddr,
+			local_newCodeAddr,
+			local_newCodeSize);
 
 	isActive = true;
 }

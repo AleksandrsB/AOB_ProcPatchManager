@@ -6,6 +6,7 @@
 
 extern "C" int asmPatchUtils_findPattern32(std::uint8_t * func, std::uintptr_t pattern);
 extern "C" int asmPatchUtils_formatNextRelative(std::uint8_t * funcToInject, std::uintptr_t funcInjectionAddr, std::uintptr_t valueToCalc);
+extern "C" int asmPatchUtils_formatNextAbsolute(std::uint8_t * funcToInject, std::uintptr_t funcInjectionAddr, std::uintptr_t valueToCalc);
 
 class PatchClass
 {
@@ -29,6 +30,7 @@ public:
 	virtual PatchClass& setNewCodeInfo(std::uint8_t* local_newCodeAddr);
 
 	virtual void patch() = 0;
+	virtual void testPatch() = 0;
 	virtual void unpatch() = 0;
 };
 
@@ -55,9 +57,12 @@ public:
 	
 
 	PatchWithTrampoline& formatNextRelative(const ModuleOffset& remote_addrToInsert);
+	PatchWithTrampoline& formatNextAbsolute(const ModuleOffset& remote_addrToInsert);
+
 	bool hasUnassignedRelatives();
 
 	void patch() override;
+	void testPatch();
 	void unpatch() override;
 
 };

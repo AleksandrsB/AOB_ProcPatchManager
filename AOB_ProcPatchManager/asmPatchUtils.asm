@@ -90,4 +90,50 @@ out_of_range:
 
 asmPatchUtils_formatNextRelative ENDP
 
+; ================================================
+; RCX = funcToInject
+; RDX = funcInjectionAddr
+; R8 = absAddress
+
+asmPatchUtils_formatNextAbsolute PROC 
+	;========[ push all afflicted registers ]
+	push rbx
+	;========[ main code ]
+	push rdx
+	xor rdx, rdx
+	mov rdx, 0DEADC0DEh
+	call asmPatchUtils_findPattern32	; get EndOfFunc
+
+	cmp rax, -1 ; check if code limit reached
+	je out_of_range
+	
+	mov rbx, rax ; save EndOfFunc offset
+	mov rdx, 0DEADBEEDh
+	call asmPatchUtils_findPattern32	; find next RelPattern
+
+	cmp rax, rbx ; check if code limit reached (found outside)
+	jge out_of_range
+	cmp rax, -1	; check if code limit reached
+	je out_of_range
+
+	; rax = absPatternOffset
+	pop rdx
+	mov rbx, rax ; save offset
+
+	; r8 = true relative addr
+	lea rax, [rcx + rbx]
+	mov [rax], r8d	; patch instruction with new calculated relative value
+	mov rax, 1		; return success
+	;========[ pop all afflicted registers ]
+	pop rbx
+	ret
+
+out_of_range:
+	pop rax
+	mov rax, -1
+	;========[ pop all afflicted registers ]
+	pop rbx
+	ret
+
+asmPatchUtils_formatNextAbsolute ENDP
 END
