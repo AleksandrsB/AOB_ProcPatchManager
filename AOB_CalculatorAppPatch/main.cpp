@@ -30,6 +30,8 @@ int main()
 {
 	std::shared_ptr<ProcMem>calcPM(new ProcMem(L"CalculatorApp.exe"));
 	AOB_PatchManager pm(calcPM);
+	std::uint64_t result = calcPM->readMemory<std::uint64_t>({ L"CalcViewModel.dll", 0x10EFB5 });
+	std::cout << result << std::endl;
 	if (pm.lastError != eLastError::OK)
 	{
 		LOG("An error occured while creating AOB_PatchManager class!");
